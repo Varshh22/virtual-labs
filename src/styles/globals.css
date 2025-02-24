@@ -1,0 +1,22 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  :root {
+    --primary-color: #0085FF;
+    --secondary-color: #4B4B4B;
+    --background-color: #F5F5F5;
+    --white: #FFFFFF;
+    --gray-light: #E5E5E5;
+    --text-primary: #333333;
+  }
+  
+  body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-primary);
+}
+
+
