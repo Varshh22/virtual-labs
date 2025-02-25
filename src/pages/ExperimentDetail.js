@@ -1,17 +1,24 @@
-import React from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import { useParams } from 'react-router-dom';
 import Card from '../components/common/Card';
 import ExperimentVideo from '../components/experiments/ExperimentVideo';
 import Button from '../components/common/Button';
 
+const Chatbot = lazy(() => import('../components/chat/Chatbot')); // ✅ Lazy-loaded chatbot
+
 const ExperimentDetail = () => {
   const { id } = useParams();
+  const [showChat, setShowChat] = useState(false); // ✅ State for chatbot visibility
+
+  const toggleChat = () => {
+    setShowChat((prev) => !prev);
+  };
 
   const styles = {
     container: {
-      maxWidth: '100%', // ✅ Takes full width
+      maxWidth: '100%',
       margin: '0 auto',
-      paddingBottom: '80px', // ✅ Prevents floating buttons from covering content
+      paddingBottom: '80px',
     },
     header: {
       marginBottom: '20px',
@@ -29,14 +36,16 @@ const ExperimentDetail = () => {
       flexDirection: 'column',
       alignItems: 'center',
       gap: '20px',
+      transition: 'width 0.3s ease', // ✅ Smooth transition when resizing
+      width: showChat ? '75%' : '90%', // ✅ Shrinks when chatbot is open
     },
     videoContainer: {
-      width: '90vw', // ✅ Makes video occupy most of the screen width
-      maxWidth: '1200px',
+      width: '100%',
+      maxWidth: showChat ? '900px' : '1200px', // ✅ Adjusts size dynamically
     },
     section: {
-      width: '90vw', // ✅ Makes procedure text occupy most of the screen width
-      maxWidth: '1200px',
+      width: '100%',
+      maxWidth: showChat ? '900px' : '1200px', // ✅ Adjusts width dynamically
     },
     sectionTitle: {
       fontSize: '18px',
@@ -46,18 +55,18 @@ const ExperimentDetail = () => {
     floatingButtons: {
       position: 'fixed',
       bottom: '20px',
-      right: '20px',
+      right: showChat ? '380px' : '20px', // ✅ Pushes floating buttons when chatbot is open
       display: 'flex',
       gap: '12px',
     },
     chatbotButton: {
       position: 'fixed',
-      top: '20px',
+      top: '20px', // ✅ Keeps chatbot icon at the top right
       right: '20px',
       backgroundColor: 'transparent',
       border: 'none',
       cursor: 'pointer',
-      zIndex: 1000, // ✅ Ensures it stays on top
+      zIndex: 1000,
     },
     chatbotImage: {
       width: '50px',
@@ -67,21 +76,21 @@ const ExperimentDetail = () => {
 
   return (
     <div style={styles.container}>
-      {/* ✅ Header with Floating Chatbot Button */}
+      {/* ✅ Header with Floating Chatbot Button in Top Right */}
       <div style={styles.header}>
         <h1 style={styles.title}>Estimation of Ferrous Sulphate (Fe2+)</h1>
-        <button style={styles.chatbotButton}>
+        <button style={styles.chatbotButton} onClick={toggleChat}>
           <img src="/assets/chatbot.png" alt="Chatbot" style={styles.chatbotImage} />
         </button>
       </div>
 
       <div style={styles.content}>
-        {/* ✅ Enlarged Video Section */}
+        {/* ✅ Enlarged Video Section (Resizes when Chatbot Opens) */}
         <div style={styles.videoContainer}>
           <ExperimentVideo videoUrl="/placeholder-video.mp4" title="Experiment 1 Video" />
         </div>
 
-        {/* ✅ Procedure Section Below Video */}
+        {/* ✅ Procedure Section Below Video (Resizes when Chatbot Opens) */}
         <Card style={styles.section}>
           <h2 style={styles.sectionTitle}>Procedure</h2>
           <p>Detailed procedure steps will go here...</p>
@@ -93,6 +102,13 @@ const ExperimentDetail = () => {
         <Button>Practice MCQs</Button>
         <Button>Practice Space</Button>
       </div>
+
+      {/* ✅ Chatbot Component (Appears in Bottom Right When Clicked) */}
+      {showChat && (
+        <Suspense fallback={<div>Loading Chatbot...</div>}>
+          <Chatbot />
+        </Suspense>
+      )}
     </div>
   );
 };

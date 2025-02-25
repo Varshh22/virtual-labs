@@ -8,6 +8,7 @@ import SettingsPage from './pages/SettingsPage';
 import DashboardPage from './pages/DashboardPage';
 import Todo from './pages/Todo';
 import MainLayout from './components/layout/MainLayout';
+import Chatbot from './components/chat/Chatbot';
 
 const App = () => {
   return (
