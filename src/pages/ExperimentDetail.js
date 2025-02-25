@@ -9,77 +9,89 @@ const ExperimentDetail = () => {
 
   const styles = {
     container: {
-      maxWidth: '1200px',
+      maxWidth: '100%', // ✅ Takes full width
       margin: '0 auto',
+      paddingBottom: '80px', // ✅ Prevents floating buttons from covering content
     },
     header: {
-      marginBottom: '32px',
+      marginBottom: '20px',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: '20px',
     },
     title: {
       fontSize: '24px',
-      marginBottom: '16px',
+      textAlign: 'left',
     },
     content: {
-      display: 'grid',
-      gridTemplateColumns: '2fr 1fr',
-      gap: '24px',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: '20px',
+    },
+    videoContainer: {
+      width: '90vw', // ✅ Makes video occupy most of the screen width
+      maxWidth: '1200px',
     },
     section: {
-      marginBottom: '24px',
+      width: '90vw', // ✅ Makes procedure text occupy most of the screen width
+      maxWidth: '1200px',
     },
     sectionTitle: {
       fontSize: '18px',
       marginBottom: '16px',
+      textAlign: 'left',
+    },
+    floatingButtons: {
+      position: 'fixed',
+      bottom: '20px',
+      right: '20px',
+      display: 'flex',
+      gap: '12px',
+    },
+    chatbotButton: {
+      position: 'fixed',
+      top: '20px',
+      right: '20px',
+      backgroundColor: 'transparent',
+      border: 'none',
+      cursor: 'pointer',
+      zIndex: 1000, // ✅ Ensures it stays on top
+    },
+    chatbotImage: {
+      width: '50px',
+      height: '50px',
     },
   };
 
   return (
     <div style={styles.container}>
+      {/* ✅ Header with Floating Chatbot Button */}
       <div style={styles.header}>
         <h1 style={styles.title}>Estimation of Ferrous Sulphate (Fe2+)</h1>
-        <div>Titration • 1 week</div>
+        <button style={styles.chatbotButton}>
+          <img src="/assets/chatbot.png" alt="Chatbot" style={styles.chatbotImage} />
+        </button>
       </div>
 
       <div style={styles.content}>
-        <div>
-          <ExperimentVideo 
-            videoUrl="/placeholder-video.mp4"
-            title="Experiment 1 Video"
-          />
-          
-          <Card style={styles.section}>
-            <h2 style={styles.sectionTitle}>Objective</h2>
-            <p>To observe the effect of heating on a copper sulfate (CuSO4) solution and understand how crystallization occurs when the solution cools.</p>
-          </Card>
-
-          <Card style={styles.section}>
-            <h2 style={styles.sectionTitle}>Procedure</h2>
-            <p>Detailed procedure steps will go here...</p>
-          </Card>
+        {/* ✅ Enlarged Video Section */}
+        <div style={styles.videoContainer}>
+          <ExperimentVideo videoUrl="/placeholder-video.mp4" title="Experiment 1 Video" />
         </div>
 
-        <div>
-          <Card>
-            <h2 style={styles.sectionTitle}>Progress</h2>
-            <div style={{ marginBottom: '20px' }}>
-              <div>80% Complete</div>
-              <div style={{
-                width: '100%',
-                height: '8px',
-                backgroundColor: 'var(--gray-light)',
-                borderRadius: '4px',
-                overflow: 'hidden',
-              }}>
-                <div style={{
-                  width: '80%',
-                  height: '100%',
-                  backgroundColor: 'var(--primary-color)',
-                }}/>
-              </div>
-            </div>
-            <Button fullWidth>Practice MCQs</Button>
-          </Card>
-        </div>
+        {/* ✅ Procedure Section Below Video */}
+        <Card style={styles.section}>
+          <h2 style={styles.sectionTitle}>Procedure</h2>
+          <p>Detailed procedure steps will go here...</p>
+        </Card>
+      </div>
+
+      {/* ✅ Floating Bottom Buttons */}
+      <div style={styles.floatingButtons}>
+        <Button>Practice MCQs</Button>
+        <Button>Practice Space</Button>
       </div>
     </div>
   );
