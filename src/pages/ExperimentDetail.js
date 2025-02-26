@@ -104,7 +104,9 @@ const ExperimentDetail = () => {
       <Link to="/mcq">
         <Button>Practice MCQs</Button>
       </Link>
+      <a href="/practice-space.html">
         <Button>Practice Space</Button>
+      </a>
       </div>
 
       {/* ✅ Chatbot Component (Appears in Bottom Right When Clicked) */}

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chemistry Lab: Acid-Base Experiments</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: #f0f0f0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #menu {
+            text-align: center;
+            padding: 20px;
+            margin-top: 50px;
+        }
+
+        .btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+            transition: 0.3s;
+        }
+
+        .btn:hover {
+            background: #45a049;
+            transform: scale(1.05);
+        }
+
+        .test-tube {
+            width: 80px;
+            height: 160px;
+            border: 2px solid #333;
+            border-radius: 0 0 20px 20px;
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            transition: all 1s ease;
+            overflow: hidden;
+        }
+
+        .liquid {
+            width: 100%;
+            height: 60px;
+            position: absolute;
+            bottom: 0;
+            transition: all 1s ease;
+        }
+
+        .label {
+            position: absolute;
+            top: -25px;
+            width: 100%;
+            text-align: center;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .burette {
+            width: 20px;
+            height: 200px;
+            background: white;
+            position: absolute;
+            border: 2px solid #333;
+            top: 200px; /* ✅ Move burette 50px down */
+            border-radius: 0 0 5px 5px;
+            overflow: hidden;
+        }
+
+        .burette-liquid {
+            width: 100%;
+            height: 100%;
+            background: #ffcdd2;
+            position: absolute;
+            bottom: 0;
+            transition: height 1s linear;
+        }
+
+        .droplet {
+            width: 8px;
+            height: 8px;
+            background: #ffcdd2;
+            position: absolute;
+            border-radius: 50%;
+            animation: drop 1.5s linear;
+        }
+
+        @keyframes drop {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(100px); opacity: 0; }
+        }
+
+        #ph-meter {
+            display: none; /* ✅ Hidden initially */
+            position: absolute;
+            top: 620px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            border: 1px solid #333;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        #titration-controls {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="menu">
+        <h1>Chemistry Lab</h1>
+        <h2>Acid-Base Experiments</h2>
+        <button onclick="startExperiment('neutralization')" class="btn">Neutralization</button>
+        <button onclick="startExperiment('titration')" class="btn">Titration</button>
+    </div>
+    <div id="level" style="display: none;"></div>
+    <div id="ph-meter">pH: <span id="ph-value">7.0</span></div>
+    <div id="titration-controls">
+        <button onclick="addDrop()" class="btn">Add Drop</button>
+        <span id="volume-added">Volume added: 0.0 mL</span>
+        <button onclick="submitTitration()" class="btn">Submit</button> <!-- ✅ Submit button added -->
+    </div>
+
+    <script>
+        let mode = '';
+        let volumeAdded = 0;
+        let dropCount = 0;
+
+        function startExperiment(experimentMode) {
+            if (experimentMode === "neutralization") {
+                window.location.href = "/neutralization.html"; // ✅ Open neutralization in same tab
+                return;
+            }
+
+            mode = experimentMode;
+            document.getElementById("menu").style.display = "none";
+            document.getElementById("level").style.display = "block";
+
+            if (mode === "titration") {
+                setupTitration();
+                document.getElementById("ph-meter").style.display = "block"; // ✅ Show pH meter
+            } else {
+                document.getElementById("ph-meter").style.display = "none"; // ✅ Hide pH meter
+            }
+        }
+
+        function setupTitration() {
+            volumeAdded = 0;
+            dropCount = 0;
+            document.getElementById("level").innerHTML = `
+                <div id="lvl-heading" style="margin-top: 20px;">Titration Experiment</div>
+
+                <div class="burette" style="left: calc(50% - 10px); top: 200px;">
+                    <div class="burette-liquid" style="height: 100%"></div>
+                    <div class="volume-display">50.0 mL</div>
+                </div>
+
+                <div class="test-tube" style="top: 450px; left: calc(50% - 40px);">
+                    <div class="liquid" style="background-color: #b2ebf2; height: 60px;"></div>
+                    <div class="label">Unknown Base</div>
+                </div>
+            `;
+
+            document.getElementById("titration-controls").style.display = "block";
+            document.getElementById("ph-meter").style.display = "block";
+        }
+
+        function addDrop() {
+            volumeAdded += 0.5;
+            dropCount++;
+
+            let burette = document.querySelector('.burette-liquid');
+            let beaker = document.querySelector('.test-tube .liquid');
+
+            let droplet = document.createElement('div');
+            droplet.className = 'droplet';
+            droplet.style.position = "absolute";
+            droplet.style.width = "10px";
+            droplet.style.height = "10px";
+            droplet.style.backgroundColor = "#ff3333"; 
+            droplet.style.borderRadius = "50%";
+            droplet.style.zIndex = "1000";
+
+            let buretteRect = document.querySelector('.burette').getBoundingClientRect();
+            droplet.style.left = `${buretteRect.left + 8}px`; 
+            droplet.style.top = `${buretteRect.bottom - 10}px`; 
+
+            document.body.appendChild(droplet);
+
+            setTimeout(() => {
+                droplet.style.transition = "transform 1.5s linear";  
+                droplet.style.transform = `translateY(${beaker.getBoundingClientRect().top - buretteRect.bottom + 50}px)`;
+            }, 50);
+
+            setTimeout(() => {
+                droplet.remove();
+            }, 1600);
+
+            burette.style.height = `${100 - (volumeAdded / 50) * 100}%`;
+
+            if (dropCount >= 4) {
+                beaker.style.backgroundColor = "#ff9999"; 
+            }
+
+            document.getElementById("volume-added").textContent = `Volume added: ${volumeAdded.toFixed(1)} mL`;
+        }
+
+        function submitTitration() {
+            if (dropCount >= 5) {
+                window.location.href = "/success.html"; // ✅ Redirect to success page
+            } else {
+                window.location.href = "/fail.html"; // ✅ Redirect to fail page
+            }
+        }
+
+
+    </script>
+</body>
+</html>

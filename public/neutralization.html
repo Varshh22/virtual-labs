@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chemistry Lab: Acid-Base Neutralization</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: #f0f0f0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #level {
+            text-align: center;
+        }
+
+        .test-tube {
+            width: 80px;
+            height: 160px;
+            border: 2px solid #333;
+            border-radius: 0 0 20px 20px;
+            position: relative;
+            background-color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            margin: 20px;
+            display: inline-block;
+            overflow: hidden;
+        }
+
+        .liquid {
+            width: 100%;
+            height: 50%;
+            position: absolute;
+            bottom: 0;
+            transition: background 0.5s ease;
+        }
+
+        .label {
+            margin-top: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            display: block;
+            text-align: center;
+        }
+
+        #reaction-message {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        #reaction-equation {
+            font-size: 24px;
+            text-align: center;
+            margin: 20px 0;
+            font-family: monospace;
+        }
+
+        #moves {
+            font-size: 18px;
+            margin: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 20px;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        .beaker-container {
+            display: inline-block;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="level"></div>
+    <button id="submitBtn">Submit</button>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            let beakers = ["HCl", "NaOH", "empty"];
+            let selectedLiquid = null;
+            let moves = 0;
+            let level = document.getElementById("level");
+            let submitBtn = document.getElementById("submitBtn");
+
+            function renderBeakers() {
+                level.innerHTML = `<h2>Chemistry Lab: Acid-Base Neutralization</h2>`;
+                level.innerHTML += `<div id="moves">Steps: ${moves}</div>`;
+
+                beakers.forEach((liquid, index) => {
+                    let label = (liquid === "HCl") ? "HCl (Acid)" :
+                                (liquid === "NaOH") ? "NaOH (Base)" :
+                                (liquid === "NaCl") ? "NaCl Solution" : "Empty Beaker";
+                    level.innerHTML += `
+                        <div class="beaker-container">
+                            <div class="test-tube" onclick="selectLiquid(${index})">
+                                <div class="liquid" style="background-color: ${getColor(liquid)};"></div>
+                            </div>
+                            <span class="label">${label}</span>
+                        </div>`;
+                });
+            }
+
+            function getColor(solution) {
+                switch(solution) {
+                    case "HCl": return "#ff6666"; // Red (acid)
+                    case "NaOH": return "#66ccff"; // Blue (base)
+                    case "NaCl": return "#dcdcdc"; // Light gray (neutralized)
+                    default: return "transparent";
+                }
+            }
+
+            window.selectLiquid = function(index) {
+                if (selectedLiquid === null && beakers[index] !== "empty") {
+                    selectedLiquid = beakers[index];
+                    beakers[index] = "empty";
+                    renderBeakers();
+                } else if (selectedLiquid !== null) {
+                    if (beakers[index] === "empty") {
+                        beakers[index] = selectedLiquid;
+                    } else if ((beakers[index] === "HCl" && selectedLiquid === "NaOH") || 
+                               (beakers[index] === "NaOH" && selectedLiquid === "HCl")) {
+                        beakers[index] = "NaCl"; 
+                    }
+                    selectedLiquid = null;
+                    moves++;
+                    renderBeakers();
+                }
+            };
+
+            function checkReaction() {
+                if (beakers.includes("NaCl")) {
+                    showSuccessMessage();
+                } else {
+                    showTryAgainMessage();
+                }
+            }
+
+            function showSuccessMessage() {
+                level.innerHTML = `
+                    <h2>🎉 Reaction Successful! 🎉</h2>
+                    <div id="reaction-equation">HCl + NaOH → NaCl + H₂O</div>
+                    <p id="reaction-message" style="color: green;">The acid and base have neutralized each other to form salt and water.</p>
+                    <button onclick="restart()">Try Again</button>
+                `;
+                submitBtn.style.display = "none";
+            }
+
+            function showTryAgainMessage() {
+                let reactionMessage = document.createElement("p");
+                reactionMessage.id = "reaction-message";
+                reactionMessage.style.color = "red";
+                reactionMessage.textContent = "❌ Try Again: You need to mix acid and base!";
+                level.appendChild(reactionMessage);
+            }
+
+            window.restart = function() {
+                beakers = ["HCl", "NaOH", "empty"];
+                selectedLiquid = null;
+                moves = 0;
+                renderBeakers();
+                submitBtn.style.display = "block";
+            };
+
+            submitBtn.addEventListener("click", checkReaction);
+            renderBeakers();
+        });
+    </script>
+</body>
+</html>
