@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'; // ✅ Import Link
+
 import React, { useState, lazy, Suspense } from 'react';
 import { useParams } from 'react-router-dom';
 import Card from '../components/common/Card';
@@ -99,7 +101,9 @@ const ExperimentDetail = () => {
 
       {/* ✅ Floating Bottom Buttons */}
       <div style={styles.floatingButtons}>
+      <Link to="/mcq">
         <Button>Practice MCQs</Button>
+      </Link>
         <Button>Practice Space</Button>
       </div>
 
