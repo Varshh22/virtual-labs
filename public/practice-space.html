@@ -123,6 +123,55 @@
             transform: translateX(-50%);
             display: none;
         }
+
+        /* Voice control styles */
+        #voice-controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #voice-button {
+            background: #2196F3;
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+        }
+
+        #voice-button:hover {
+            background: #0b7dda;
+            transform: scale(1.05);
+        }
+
+        #voice-button.listening {
+            background: #F44336;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        #voice-status {
+            margin-top: 5px;
+            font-size: 12px;
+            color: #555;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -140,10 +189,270 @@
         <button onclick="submitTitration()" class="btn">Submit</button> <!-- ✅ Submit button added -->
     </div>
 
+    <!-- Voice control UI -->
+    <div id="voice-controls">
+        <button id="voice-button" onclick="toggleVoiceRecognition()">
+            <i>🎤</i>
+        </button>
+        <div id="voice-status">Click to activate voice</div>
+    </div>
+
     <script>
         let mode = '';
         let volumeAdded = 0;
         let dropCount = 0;
+        let recognition;
+        let isListening = false;
+
+            // Enhanced speech recognition initialization
+    function initSpeechRecognition() {
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            // Initialize the speech recognition object
+            recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.continuous = false;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+            
+            // Set up event handlers
+            recognition.onresult = function(event) {
+                let finalTranscript = '';
+                
+                // Process interim and final results
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript.toLowerCase();
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript;
+                        
+                        // Display recognized command for debugging
+                        console.log("Final transcript:", finalTranscript);
+                        document.getElementById('voice-status').textContent = 'Command: ' + finalTranscript;
+                        
+                        // Process the command
+                        processVoiceCommand(finalTranscript);
+                        
+                        setTimeout(() => {
+                            document.getElementById('voice-status').textContent = 'Click to activate voice';
+                        }, 3000);
+                    } else {
+                        // Show interim results
+                        document.getElementById('voice-status').textContent = 'Listening: ' + transcript;
+                    }
+                }
+            };
+
+            recognition.onend = function() {
+                isListening = false;
+                document.getElementById('voice-button').classList.remove('listening');
+            };
+
+            recognition.onerror = function(event) {
+                console.error('Speech recognition error', event.error);
+                isListening = false;
+                document.getElementById('voice-button').classList.remove('listening');
+                
+                let errorMessage = 'Error: ';
+                switch(event.error) {
+                    case 'no-speech':
+                        errorMessage += 'No speech detected. Please try again.';
+                        break;
+                    case 'aborted':
+                        errorMessage += 'Recognition aborted.';
+                        break;
+                    case 'audio-capture':
+                        errorMessage += 'Microphone not available.';
+                        break;
+                    case 'network':
+                        errorMessage += 'Network error. Check your connection.';
+                        break;
+                    case 'not-allowed':
+                        errorMessage += 'Microphone access denied.';
+                        break;
+                    default:
+                        errorMessage += event.error;
+                }
+                
+                document.getElementById('voice-status').textContent = errorMessage;
+                setTimeout(() => {
+                    document.getElementById('voice-status').textContent = 'Click to activate voice';
+                }, 3000);
+            };
+            
+            // Add restart event to ensure continuous recognition
+            recognition.onend = function() {
+                isListening = false;
+                document.getElementById('voice-button').classList.remove('listening');
+            };
+        } else {
+            // Browser doesn't support speech recognition
+            document.getElementById('voice-status').textContent = 'Speech recognition not supported';
+            document.getElementById('voice-button').style.display = 'none';
+        }
+    }
+
+    // Toggle voice recognition on/off
+    function toggleVoiceRecognition() {
+        if (!recognition) {
+            initSpeechRecognition();
+        }
+        
+        if (isListening) {
+            recognition.stop();
+            isListening = false;
+            document.getElementById('voice-button').classList.remove('listening');
+            document.getElementById('voice-status').textContent = 'Voice recognition stopped';
+        } else {
+            try {
+                recognition.start();
+                isListening = true;
+                document.getElementById('voice-button').classList.add('listening');
+                document.getElementById('voice-status').textContent = 'Listening...';
+            } catch (error) {
+                console.error('Speech recognition error', error);
+                document.getElementById('voice-status').textContent = 'Error starting recognition';
+            }
+        }
+    }
+
+    // Enhanced voice command processing
+    function processVoiceCommand(command) {
+        console.log('Processing voice command:', command);
+        
+        // Add visual feedback
+        addCommandFeedback(command);
+        
+        // Menu commands - More flexible matching patterns
+        if (mode === '') {
+            console.log('In menu mode');
+            if (/\b(start|begin|open|launch|go to)\b.*\b(neutralization|neutral)/i.test(command)) {
+                console.log('Starting neutralization experiment');
+                startExperiment('neutralization');
+                return;
+            } 
+            
+            if (/\b(start|begin|open|launch|go to)\b.*\b(titration|titrate)/i.test(command)) {
+                console.log('Starting titration experiment');
+                startExperiment('titration');
+                return;
+            }
+        }
+        
+        // Titration experiment commands
+        if (mode === 'titration') {
+            console.log('In titration mode');
+            if (/\b(add|put|place|drop|insert|one more)\b.*\b(drop|drip|droplet)/i.test(command) || 
+                command.includes('drop') || command.includes('add')) {
+                console.log('Adding drop');
+                addDrop();
+                return;
+            }
+            
+            if (/\b(submit|finish|complete|done|check|verify|confirm)/i.test(command)) {
+                console.log('Submitting titration');
+                submitTitration();
+                return;
+            }
+        }
+        
+        // General navigation commands
+        if (/\b(back|return|menu|home|main|restart|reload)/i.test(command)) {
+            console.log('Returning to menu');
+            window.location.reload();
+            return;
+        }
+        
+        // Help command
+        if (/\b(help|what can i say|commands|instruction)/i.test(command)) {
+            showHelp();
+            return;
+        }
+        
+        // If no command matched, provide feedback
+        console.log('Command not recognized');
+        document.getElementById('voice-status').textContent = 'Command not recognized. Try "help" for available commands.';
+    }
+
+    // Function to add visual feedback for recognized commands
+    function addCommandFeedback(command) {
+        // Create a feedback element
+        const feedback = document.createElement('div');
+        feedback.style.position = 'fixed';
+        feedback.style.top = '80px';
+        feedback.style.right = '20px';
+        feedback.style.padding = '10px 15px';
+        feedback.style.background = 'rgba(0, 0, 0, 0.7)';
+        feedback.style.color = 'white';
+        feedback.style.borderRadius = '5px';
+        feedback.style.zIndex = '9999';
+        feedback.style.transition = 'opacity 0.5s';
+        feedback.textContent = `Command: "${command}"`;
+        
+        document.body.appendChild(feedback);
+        
+        // Remove after 2 seconds
+        setTimeout(() => {
+            feedback.style.opacity = '0';
+            setTimeout(() => {
+                document.body.removeChild(feedback);
+            }, 500);
+        }, 2000);
+    }
+
+    // Function to show available voice commands
+    function showHelp() {
+        // Create help dialog
+        const helpDialog = document.createElement('div');
+        helpDialog.style.position = 'fixed';
+        helpDialog.style.top = '0';
+        helpDialog.style.left = '0';
+        helpDialog.style.width = '100%';
+        helpDialog.style.height = '100%';
+        helpDialog.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+        helpDialog.style.zIndex = '10000';
+        helpDialog.style.display = 'flex';
+        helpDialog.style.justifyContent = 'center';
+        helpDialog.style.alignItems = 'center';
+        
+        const helpContent = document.createElement('div');
+        helpContent.style.width = '80%';
+        helpContent.style.maxWidth = '500px';
+        helpContent.style.backgroundColor = 'white';
+        helpContent.style.padding = '20px';
+        helpContent.style.borderRadius = '10px';
+        helpContent.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
+        
+        helpContent.innerHTML = `
+            <h2 style="text-align: center; margin-top: 0;">Voice Commands</h2>
+            <h3>Main Menu:</h3>
+            <ul>
+                <li>"Start neutralization" / "Begin neutralization experiment"</li>
+                <li>"Start titration" / "Begin titration experiment"</li>
+            </ul>
+            <h3>Titration Experiment:</h3>
+            <ul>
+                <li>"Add drop" / "Drop" / "One more drop"</li>
+                <li>"Submit" / "Finish" / "Complete"</li>
+            </ul>
+            <h3>General Commands:</h3>
+            <ul>
+                <li>"Go back" / "Return to menu" / "Menu"</li>
+                <li>"Help" / "What can I say"</li>
+            </ul>
+            <div style="text-align: center; margin-top: 20px;">
+                <button id="close-help" style="padding: 8px 16px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">Close</button>
+            </div>
+        `;
+        
+        helpDialog.appendChild(helpContent);
+        document.body.appendChild(helpDialog);
+        
+        // Add close button functionality
+        document.getElementById('close-help').addEventListener('click', () => {
+            document.body.removeChild(helpDialog);
+        });
+    }
+
+    // Make sure main functions are defined in global scope
+    window.toggleVoiceRecognition = toggleVoiceRecognition;
 
         function startExperiment(experimentMode) {
             if (experimentMode === "neutralization") {
@@ -231,8 +540,6 @@
                 window.location.href = "/fail.html"; // ✅ Redirect to fail page
             }
         }
-
-
     </script>
 </body>
 </html>

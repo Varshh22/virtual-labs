@@ -88,11 +88,71 @@
             display: inline-block;
             text-align: center;
         }
+
+        /* Voice control styles */
+        #voice-controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #voice-button {
+            background: #2196F3;
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+        }
+
+        #voice-button:hover {
+            background: #0b7dda;
+            transform: scale(1.05);
+        }
+
+        #voice-button.listening {
+            background: #F44336;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        #voice-status {
+            margin-top: 5px;
+            font-size: 12px;
+            color: #555;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
     <div id="level"></div>
     <button id="submitBtn">Submit</button>
+
+    <!-- Voice control UI -->
+    <div id="voice-controls">
+        <button id="voice-button" onclick="toggleVoiceRecognition()">
+            <i>🎤</i>
+        </button>
+        <div id="voice-status">Click to activate voice</div>
+    </div>
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
@@ -101,6 +161,119 @@
             let moves = 0;
             let level = document.getElementById("level");
             let submitBtn = document.getElementById("submitBtn");
+            let recognition;
+            let isListening = false;
+
+            // Initialize speech recognition
+            function initSpeechRecognition() {
+                if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                    // Initialize the speech recognition object
+                    recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+                    recognition.continuous = false;
+                    recognition.interimResults = false;
+                    recognition.lang = 'en-US';
+
+                    // Set up event handlers
+                    recognition.onresult = function(event) {
+                        const transcript = event.results[0][0].transcript.toLowerCase();
+                        processVoiceCommand(transcript);
+                        
+                        document.getElementById('voice-status').textContent = 'Command: ' + transcript;
+                        setTimeout(() => {
+                            document.getElementById('voice-status').textContent = 'Click to activate voice';
+                        }, 3000);
+                    };
+
+                    recognition.onend = function() {
+                        isListening = false;
+                        document.getElementById('voice-button').classList.remove('listening');
+                    };
+
+                    recognition.onerror = function(event) {
+                        console.error('Speech recognition error', event.error);
+                        isListening = false;
+                        document.getElementById('voice-button').classList.remove('listening');
+                        document.getElementById('voice-status').textContent = 'Error: ' + event.error;
+                        setTimeout(() => {
+                            document.getElementById('voice-status').textContent = 'Click to activate voice';
+                        }, 3000);
+                    };
+                } else {
+                    // Browser doesn't support speech recognition
+                    document.getElementById('voice-status').textContent = 'Speech recognition not supported';
+                }
+            }
+
+            // Toggle voice recognition on/off
+            window.toggleVoiceRecognition = function() {
+                if (!recognition) {
+                    initSpeechRecognition();
+                }
+                
+                if (isListening) {
+                    recognition.stop();
+                    isListening = false;
+                    document.getElementById('voice-button').classList.remove('listening');
+                    document.getElementById('voice-status').textContent = 'Voice recognition stopped';
+                } else {
+                    try {
+                        recognition.start();
+                        isListening = true;
+                        document.getElementById('voice-button').classList.add('listening');
+                        document.getElementById('voice-status').textContent = 'Listening...';
+                    } catch (error) {
+                        console.error('Speech recognition error', error);
+                        document.getElementById('voice-status').textContent = 'Error starting recognition';
+                    }
+                }
+            };
+
+            // Process voice commands
+            function processVoiceCommand(command) {
+                console.log('Voice command:', command);
+                
+                // Select beaker commands
+                if (command.includes('select') || command.includes('choose')) {
+                    let beakerIndex = -1;
+                    
+                    if (command.includes('acid') || command.includes('hcl') || command.includes('first')) {
+                        beakerIndex = 0; // HCl beaker
+                    } else if (command.includes('base') || command.includes('naoh') || command.includes('second')) {
+                        beakerIndex = 1; // NaOH beaker
+                    } else if (command.includes('empty') || command.includes('third')) {
+                        beakerIndex = 2; // Empty beaker
+                    }
+                    
+                    if (beakerIndex >= 0) {
+                        selectLiquid(beakerIndex);
+                    }
+                }
+                
+                // Submit command
+                if (command.includes('submit') || command.includes('check') || 
+                    command.includes('verify') || command.includes('done')) {
+                    checkReaction();
+                }
+                
+                // Restart command
+                if (command.includes('restart') || command.includes('reset') || 
+                    command.includes('start over') || command.includes('try again')) {
+                    restart();
+                }
+                
+                // Go back to main menu
+                if (command.includes('go back') || command.includes('main menu') || 
+                    command.includes('return')) {
+                    window.location.href = "/"; // Adjust if your main page has a different URL
+                }
+            }
+
+            // Initialize voice recognition when page loads
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                initSpeechRecognition();
+            } else {
+                document.getElementById('voice-status').textContent = 'Speech recognition not supported';
+            }
 
             function renderBeakers() {
                 level.innerHTML = `<h2>Chemistry Lab: Acid-Base Neutralization</h2>`;
