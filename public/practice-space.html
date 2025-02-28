@@ -207,85 +207,62 @@
             // Enhanced speech recognition initialization
     function initSpeechRecognition() {
         if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-            // Initialize the speech recognition object
             recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
             recognition.continuous = false;
-            recognition.interimResults = true;
+            recognition.interimResults = false;
             recognition.lang = 'en-US';
-            
-            // Set up event handlers
+
             recognition.onresult = function(event) {
-                let finalTranscript = '';
-                
-                // Process interim and final results
-                for (let i = event.resultIndex; i < event.results.length; i++) {
-                    const transcript = event.results[i][0].transcript.toLowerCase();
-                    if (event.results[i].isFinal) {
-                        finalTranscript += transcript;
-                        
-                        // Display recognized command for debugging
-                        console.log("Final transcript:", finalTranscript);
-                        document.getElementById('voice-status').textContent = 'Command: ' + finalTranscript;
-                        
-                        // Process the command
-                        processVoiceCommand(finalTranscript);
-                        
-                        setTimeout(() => {
-                            document.getElementById('voice-status').textContent = 'Click to activate voice';
-                        }, 3000);
-                    } else {
-                        // Show interim results
-                        document.getElementById('voice-status').textContent = 'Listening: ' + transcript;
-                    }
-                }
-            };
+                let transcript = event.results[0][0].transcript.toLowerCase().trim();
+                console.log("Final transcript:", transcript);
+                document.getElementById('voice-status').textContent = 'Command: ' + transcript;
 
-            recognition.onend = function() {
-                isListening = false;
-                document.getElementById('voice-button').classList.remove('listening');
-            };
+                processVoiceCommand(transcript);
 
-            recognition.onerror = function(event) {
-                console.error('Speech recognition error', event.error);
-                isListening = false;
-                document.getElementById('voice-button').classList.remove('listening');
-                
-                let errorMessage = 'Error: ';
-                switch(event.error) {
-                    case 'no-speech':
-                        errorMessage += 'No speech detected. Please try again.';
-                        break;
-                    case 'aborted':
-                        errorMessage += 'Recognition aborted.';
-                        break;
-                    case 'audio-capture':
-                        errorMessage += 'Microphone not available.';
-                        break;
-                    case 'network':
-                        errorMessage += 'Network error. Check your connection.';
-                        break;
-                    case 'not-allowed':
-                        errorMessage += 'Microphone access denied.';
-                        break;
-                    default:
-                        errorMessage += event.error;
-                }
-                
-                document.getElementById('voice-status').textContent = errorMessage;
                 setTimeout(() => {
                     document.getElementById('voice-status').textContent = 'Click to activate voice';
                 }, 3000);
             };
-            
-            // Add restart event to ensure continuous recognition
+
             recognition.onend = function() {
+                console.log("Speech recognition ended.");
                 isListening = false;
                 document.getElementById('voice-button').classList.remove('listening');
+
+                    // ✅ Auto-restart recognition (prevents "no-speech" errors)
+                setTimeout(() => {
+                    if (isListening) recognition.start();
+                }, 1000);
+            };
+
+            recognition.onerror = function(event) {
+                console.error('Speech recognition error:', event.error);
+                let errorMessage = '';
+
+                switch (event.error) {
+                    case 'no-speech':
+                        errorMessage = 'No speech detected. Try again.';
+                        break;
+                    case 'audio-capture':
+                        errorMessage = 'Microphone not available.';
+                        break;
+                    case 'not-allowed':
+                        errorMessage = 'Microphone access denied.';
+                        break;
+                    default:
+                        errorMessage = 'Recognition error: ' + event.error;
+                }
+
+                document.getElementById('voice-status').textContent = errorMessage;
+
+                    // ✅ Auto-restart in case of errors
+                setTimeout(() => {
+                    document.getElementById('voice-status').textContent = 'Click to activate voice';
+                    if (isListening) recognition.start();
+                }, 3000);
             };
         } else {
-            // Browser doesn't support speech recognition
             document.getElementById('voice-status').textContent = 'Speech recognition not supported';
-            document.getElementById('voice-button').style.display = 'none';
         }
     }
 
@@ -472,6 +449,19 @@
             }
         }
 
+        function speakText(text) {
+            if ('speechSynthesis' in window) {
+                let utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.rate = 1.0;
+                utterance.pitch = 1.0;
+                speechSynthesis.speak(utterance);
+            } else {
+                console.log("Text-to-Speech is not supported in this browser.");
+            }
+        }
+
+
         function setupTitration() {
             volumeAdded = 0;
             dropCount = 0;
@@ -531,15 +521,23 @@
             }
 
             document.getElementById("volume-added").textContent = `Volume added: ${volumeAdded.toFixed(1)} mL`;
+
+            // 🔊 Speak the action
+            speakText("Drop added. Volume: " + volumeAdded.toFixed(1) + " milliliters.");
         }
 
         function submitTitration() {
+            speakText("Titration submitted. Checking results...");
+
             if (dropCount >= 5) {
+                speakText("Titration successful! The solution is neutralized.");
                 window.location.href = "/success.html"; // ✅ Redirect to success page
             } else {
+                speakText("Titration incomplete. Try again.");
                 window.location.href = "/fail.html"; // ✅ Redirect to fail page
             }
         }
+
     </script>
 </body>
 </html>

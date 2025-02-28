@@ -164,6 +164,19 @@
             let recognition;
             let isListening = false;
 
+            function speakText(text) {
+                if ('speechSynthesis' in window) {
+                    let utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = 'en-US';
+                    utterance.rate = 1.0;
+                    utterance.pitch = 1.0;
+                    speechSynthesis.speak(utterance);
+                } else {
+                    console.log("Text-to-Speech is not supported in this browser.");
+                }
+            }
+
+
             // Initialize speech recognition
             function initSpeechRecognition() {
                 if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
@@ -306,13 +319,19 @@
                 if (selectedLiquid === null && beakers[index] !== "empty") {
                     selectedLiquid = beakers[index];
                     beakers[index] = "empty";
+                    
+                    let liquidName = selectedLiquid === "HCl" ? "Acid selected" : "Base selected";
+                    speakText(liquidName);
+                    
                     renderBeakers();
                 } else if (selectedLiquid !== null) {
                     if (beakers[index] === "empty") {
                         beakers[index] = selectedLiquid;
+                        speakText("Liquid poured into empty beaker.");
                     } else if ((beakers[index] === "HCl" && selectedLiquid === "NaOH") || 
-                               (beakers[index] === "NaOH" && selectedLiquid === "HCl")) {
+                            (beakers[index] === "NaOH" && selectedLiquid === "HCl")) {
                         beakers[index] = "NaCl"; 
+                        speakText("Neutralization complete! Acid and base have reacted.");
                     }
                     selectedLiquid = null;
                     moves++;
@@ -323,10 +342,13 @@
             function checkReaction() {
                 if (beakers.includes("NaCl")) {
                     showSuccessMessage();
+                    speakText("Reaction successful! The acid and base have neutralized each other to form salt and water.");
                 } else {
                     showTryAgainMessage();
+                    speakText("Try again! You need to mix an acid and a base to complete the reaction.");
                 }
             }
+
 
             function showSuccessMessage() {
                 level.innerHTML = `
